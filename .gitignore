@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+backend/.venv/
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+backend/.env
+
+# Database & Vector Store
+backend/app.db
+backend/chroma_db/
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/settings.json
+.idea/
+
+# Logs
+*.log
+
+# Lacuna v2 additions
+chroma_db/
+app.db
+*.db
+.env.*
+!.env.example
+frontend*/dist/
+test-results/
+playwright-report/
+.lighthouseci/

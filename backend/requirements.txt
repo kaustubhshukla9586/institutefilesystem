@@ -1,0 +1,31 @@
+# Core web framework
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+python-dotenv>=1.0.0
+python-multipart>=0.0.9
+
+# Database
+sqlalchemy>=2.0.35
+
+# Auth
+passlib[bcrypt]>=1.7.4
+python-jose[cryptography]>=3.3.0
+
+# Data validation
+pydantic[email]>=2.9.0
+
+# LLM generation
+groq>=0.11.0
+
+# Embeddings (local, free)
+sentence-transformers>=3.1.0
+
+# Vector database
+chromadb>=0.5.15
+
+# PII detection & redaction
+presidio-analyzer>=2.2.355
+presidio-anonymizer>=2.2.355
+
+# NLP model for Presidio (download separately via: python -m spacy download en_core_web_lg)
+spacy>=3.8.0
