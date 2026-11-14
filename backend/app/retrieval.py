@@ -1,57 +1,37 @@
 """
-Retrieval: given a query and user role, return top-k relevant chunks
-filtered by access_level at the ChromaDB query level.
+Retrieval: top-k chunks for a query, filtered by access level INSIDE the ChromaDB query
+(the `where` clause), so restricted chunks never reach the application layer.
 """
 import os
-from typing import Optional
 
-import chromadb
-from sentence_transformers import SentenceTransformer
+from .auth import allowed_levels
+from .ingestion import get_chroma_collection, get_embed_model
 
-from .ingestion import get_embed_model, CHROMA_DIR, COLLECTION_NAME
+ROLE_ACCESS_MAP = {r: allowed_levels(r) for r in ("student", "faculty", "admin")}
 
-# Role → allowed access levels (inclusive upward)
-ROLE_ACCESS_MAP = {
-    "student": ["public"],
-    "faculty": ["public", "faculty"],
-    "admin":   ["public", "faculty", "admin"],
-}
+# Cosine distance above which a chunk is treated as "not about this question".
+# Calibrated on the Stage 5 evaluation questions; see DECISIONS.md.
+RELEVANCE_THRESHOLD = float(os.getenv("RELEVANCE_THRESHOLD", "0.6"))
 
 
-def _get_collection():
-    client = chromadb.PersistentClient(path=CHROMA_DIR)
-    return client.get_collection(COLLECTION_NAME)
+def where_for_role(role: str) -> dict:
+    levels = ROLE_ACCESS_MAP.get(role, ["public"])
+    return {"access_level": {"$in": levels}}
 
 
 def retrieve(query: str, user_role: str, top_k: int = 5) -> list[dict]:
-    allowed_levels = ROLE_ACCESS_MAP.get(user_role, ["public"])
-
-    model = get_embed_model()
-    query_embedding = model.encode([query])[0].tolist()
-
-    collection = _get_collection()
-
-    # Build a ChromaDB $in filter — never pulls restricted chunks into app layer
-    if len(allowed_levels) == 1:
-        where_filter = {"access_level": {"$eq": allowed_levels[0]}}
-    else:
-        where_filter = {"access_level": {"$in": allowed_levels}}
-
-    results = collection.query(
-        query_embeddings=[query_embedding],
-        n_results=top_k,
-        where=where_filter,
+    emb = get_embed_model().encode([query])[0].tolist()
+    res = get_chroma_collection().query(
+        query_embeddings=[emb], n_results=top_k, where=where_for_role(user_role),
         include=["documents", "metadatas", "distances"],
     )
+    out = []
+    for i, cid in enumerate(res["ids"][0] if res and res["ids"] else []):
+        out.append({"chunk_id": cid, "text": res["documents"][0][i], "metadata": res["metadatas"][0][i],
+                    "distance": res["distances"][0][i]})
+    return out
 
-    chunks = []
-    if results and results["ids"] and results["ids"][0]:
-        for i, chunk_id in enumerate(results["ids"][0]):
-            chunks.append({
-                "chunk_id": chunk_id,
-                "text": results["documents"][0][i],
-                "metadata": results["metadatas"][0][i],
-                "distance": results["distances"][0][i],
-            })
 
-    return chunks
+def relevant(chunks: list[dict], threshold: float | None = None) -> list[dict]:
+    t = RELEVANCE_THRESHOLD if threshold is None else threshold
+    return [c for c in chunks if c["distance"] <= t]

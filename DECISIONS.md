@@ -114,3 +114,13 @@ This file records design decisions and deviations from the original spec.
 - `v1-fallback` exists only as a tag; branch `submission` created from it.
 - `report_build/` (build.py, ref.docx, arch.png) is not anywhere under the user profile. Stage 1 uses the S-1..S-8 claims in the brief as the spec; report edits (Stage 7.1-7.6) are blocked until the sources are added to `report/`.
 - Existing `backend/.env` uses `JWT_SECRET`; the backend reads `JWT_SECRET` (falling back to `SECRET_KEY`).
+- Sign-up always creates `student`; any `role` field is ignored (not rejected) so old clients still work. Min password 8 (422 otherwise). Faculty/admin exist only as seeded demo users.
+- Every request re-loads the user from SQLite; the DB role is what filters retrieval, and a token whose role differs from the DB role is rejected (401).
+- JWT 60 min, HS256, secret from `JWT_SECRET`; without it the app refuses to start unless `APP_ENV=dev`.
+- CORS: only `CORS_ORIGINS` (default http://localhost:5173), methods GET/POST, headers Authorization/Content-Type, no credentials (bearer token, not cookies).
+- Login rate limit: in-memory, 5 failures per (IP, email) per 5 min -> 429. Resets on restart; fine for a single-process demo.
+- LOCATION re-enabled (report says it is redacted). DATE_TIME stays unredacted on purpose.
+- Fictionalised domains/universities by regex find-and-replace (181 replacements) to Thornwick University / thornwick.example. Presidio's e-mail recognizer validates TLDs and missed `.example`, so a plain e-mail pattern recognizer was added (passed per call as an ad-hoc recognizer; registry add with default names silently dropped it).
+- New SQLite file `rag.db` (v2 schema with documents table, audit `event`/`result`). The old `app.db` is left untouched.
+- Refusal: no chunk within RELEVANCE_THRESHOLD, or the model replies NO_ANSWER -> `refused: true`, empty sources, one fixed category-level message. The same text is used whether a restricted doc exists or not.
+- Answers: system prompt injects today's date, demands concise Markdown, forbids HTML and "according to the context"; output is additionally stripped of HTML tags.

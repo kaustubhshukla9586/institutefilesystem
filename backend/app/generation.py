@@ -1,60 +1,62 @@
 import os
-from groq import Groq
+import re
+import time
+from datetime import date
+
+from groq import Groq, RateLimitError
 
 _client = None
+MODEL = os.getenv("GROQ_MODEL") or "openai/gpt-oss-20b"
+NO_ANSWER = "NO_ANSWER"
+
+SYSTEM_PROMPT = """You answer questions for staff and students of Thornwick University using ONLY the documents given.
+Today's date is {today}.
+
+Rules:
+- If the documents do not contain the answer, reply with exactly: NO_ANSWER
+- Answer in concise Markdown: a direct answer first, then short bullet points if useful. No headings longer than one line.
+- Never output HTML.
+- Do not say "according to the provided context", "the documents say", or similar. Just answer.
+- Placeholders such as [PERSON], [STUDENT_ID], [EMAIL_ADDRESS], [PHONE_NUMBER], [LOCATION] are redacted values. Keep them as they are; never guess what they hide.
+- Do not invent facts, numbers or dates."""
 
 
 def get_groq_client() -> Groq:
     global _client
     if _client is None:
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
+        key = os.getenv("GROQ_API_KEY")
+        if not key:
             raise RuntimeError("GROQ_API_KEY not set in environment")
-        _client = Groq(api_key=api_key)
+        _client = Groq(api_key=key, max_retries=0)
     return _client
 
 
-MODEL = "openai/gpt-oss-20b"
-
-SYSTEM_PROMPT = """You are a helpful assistant for a university information system.
-You answer questions ONLY using the context documents provided below.
-Each context chunk comes from an internal university document.
-
-Rules:
-- If the provided context is empty or does not contain enough information to answer the question, respond with exactly: "I don't have access to information that would answer this question."
-- Do NOT hallucinate, invent, or add information beyond what is in the context.
-- Do NOT reveal or reconstruct any redacted PII markers like [PERSON], [STUDENT_ID], [EMAIL_ADDRESS], etc. — treat them as opaque placeholders.
-- Be concise and factual.
-- If multiple chunks are relevant, synthesize them into a single coherent answer."""
-
-
-def generate_answer(question: str, chunks: list[dict]) -> str:
-    client = get_groq_client()
-
-    if not chunks:
-        context_text = "(No relevant documents found for your access level.)"
-    else:
-        parts = []
-        for i, chunk in enumerate(chunks, 1):
-            meta = chunk.get("metadata", {})
-            title = meta.get("title", "Unknown")
-            access = meta.get("access_level", "unknown")
-            parts.append(f"[Document {i}: {title} (access: {access})]\n{chunk['text']}")
-        context_text = "\n\n---\n\n".join(parts)
-
-    messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
-        {
-            "role": "user",
-            "content": f"Context documents:\n\n{context_text}\n\n---\n\nQuestion: {question}",
-        },
+def build_messages(question: str, chunks: list[dict]) -> list[dict]:
+    parts = [f"[{c['metadata'].get('title', 'Untitled')}]\n{c['text']}" for c in chunks]
+    return [
+        {"role": "system", "content": SYSTEM_PROMPT.format(today=date.today().isoformat())},
+        {"role": "user", "content": "Documents:\n\n" + "\n\n---\n\n".join(parts) + f"\n\n---\n\nQuestion: {question}"},
     ]
 
-    response = client.chat.completions.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.1,
-        max_tokens=1024,
-    )
 
-    return response.choices[0].message.content.strip()
+def _clean(text: str) -> str:
+    text = re.sub(r"<[^>]+>", "", text or "")  # no raw HTML ever reaches the client
+    text = re.sub(r"(?i)^\s*(according to|based on) the (provided )?(context|documents?)[^,.:]*[,.:]\s*", "", text)
+    return text.strip()
+
+
+def generate_answer(question: str, chunks: list[dict], retries: int = 4) -> str:
+    """Returns the cleaned answer, or NO_ANSWER when the model finds nothing relevant."""
+    client = get_groq_client()
+    delay = 5.0
+    for attempt in range(retries + 1):
+        try:
+            r = client.chat.completions.create(model=MODEL, messages=build_messages(question, chunks),
+                                               temperature=0.1, max_tokens=700)
+            return _clean(r.choices[0].message.content)
+        except RateLimitError:
+            if attempt == retries:
+                raise
+            time.sleep(delay)
+            delay *= 2
+    raise RuntimeError("unreachable")

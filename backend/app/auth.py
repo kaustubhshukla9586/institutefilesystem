@@ -1,21 +1,34 @@
-from datetime import datetime, timedelta
-from typing import Optional
+import os
+import time
+from collections import defaultdict, deque
+from datetime import datetime, timedelta, timezone
+
+from fastapi import Depends, HTTPException, Request, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-import os
 
 from .database import get_db
 from .models import User
 
-SECRET_KEY = os.getenv("SECRET_KEY", "university-rag-secret-key-change-in-production")
+APP_ENV = os.getenv("APP_ENV", "dev").lower()
+SECRET_KEY = os.getenv("JWT_SECRET") or os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    if APP_ENV != "dev":
+        raise RuntimeError("JWT_SECRET must be set when APP_ENV is not 'dev'")
+    SECRET_KEY = "dev-only-insecure-secret"
+    print("[AUTH] WARNING: JWT_SECRET not set; using an insecure dev secret")
+
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_HOURS = 24
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+MIN_PASSWORD_LENGTH = 8
+
+ROLE_LEVEL = {"student": 0, "faculty": 1, "admin": 2}
+ACCESS_LEVELS = ["public", "faculty", "admin"]  # index == clearance
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-bearer_scheme = HTTPBearer()
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def hash_password(password: str) -> str:
@@ -26,33 +39,30 @@ def verify_password(plain: str, hashed: str) -> bool:
     return pwd_context.verify(plain, hashed)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
-    to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(hours=ACCESS_TOKEN_EXPIRE_HOURS))
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+def create_access_token(user: User) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    return jwt.encode({"sub": str(user.id), "role": user.role, "exp": expire}, SECRET_KEY, algorithm=ALGORITHM)
 
 
 def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid or expired token",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
+    """Verify the JWT signature/expiry, then load the user from the DB.
+    The role used for access control is the DB role, and must match the token's role
+    (a token issued before a role change is rejected)."""
+    exc = HTTPException(status_code=401, detail="Invalid or expired token", headers={"WWW-Authenticate": "Bearer"})
+    if credentials is None:
+        raise exc
     try:
         payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except JWTError:
-        raise credentials_exception
-
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if user is None:
-        raise credentials_exception
+        user_id = int(payload["sub"])
+        token_role = payload.get("role")
+    except (JWTError, KeyError, ValueError):
+        raise exc
+    user = db.get(User, user_id)
+    if user is None or user.role != token_role:
+        raise exc
     return user
 
 
@@ -62,26 +72,48 @@ def require_admin(current_user: User = Depends(get_current_user)) -> User:
     return current_user
 
 
+def require_staff(current_user: User = Depends(get_current_user)) -> User:
+    if current_user.role not in ("faculty", "admin"):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Faculty or admin access required")
+    return current_user
+
+
+def allowed_levels(role: str) -> list[str]:
+    return ACCESS_LEVELS[: ROLE_LEVEL.get(role, 0) + 1]
+
+
+# ---- simple in-memory login rate limit: 5 failures per (ip,email) per 5 minutes ----
+_FAILS: dict[str, deque] = defaultdict(deque)
+MAX_FAILS, WINDOW_S = 5, 300
+
+
+def _key(request: Request, email: str) -> str:
+    return f"{request.client.host if request.client else '?'}|{email.lower()}"
+
+
+def check_rate_limit(request: Request, email: str):
+    q = _FAILS[_key(request, email)]
+    now = time.monotonic()
+    while q and now - q[0] > WINDOW_S:
+        q.popleft()
+    if len(q) >= MAX_FAILS:
+        raise HTTPException(status_code=429, detail="Too many failed attempts. Try again in a few minutes.")
+
+
+def record_failure(request: Request, email: str):
+    _FAILS[_key(request, email)].append(time.monotonic())
+
+
+def clear_failures(request: Request, email: str):
+    _FAILS.pop(_key(request, email), None)
+
+
 def seed_demo_users(db: Session):
-    demo_users = [
-        {"email": "student@demo.com", "password": "demo1234", "role": "student"},
-        {"email": "faculty@demo.com", "password": "demo1234", "role": "faculty"},
-        {"email": "admin@demo.com",   "password": "demo1234", "role": "admin"},
-    ]
-    created = []
-    for u in demo_users:
-        existing = db.query(User).filter(User.email == u["email"]).first()
-        if not existing:
-            user = User(
-                email=u["email"],
-                hashed_password=hash_password(u["password"]),
-                role=u["role"],
-            )
-            db.add(user)
-            created.append(u["email"])
-    if created:
-        db.commit()
-        print(f"[SEED] Created demo users: {', '.join(created)}")
-    else:
-        print("[SEED] Demo users already exist — skipping")
-    print("[DEMO CREDENTIALS]  student@demo.com / demo1234  |  faculty@demo.com / demo1234  |  admin@demo.com / demo1234")
+    demo = [("student@demo.com", "student"), ("faculty@demo.com", "faculty"), ("admin@demo.com", "admin")]
+    for email, role in demo:
+        if not db.query(User).filter(User.email == email).first():
+            db.add(User(email=email, hashed_password=hash_password("demo1234"), role=role))
+    # remove leftover RBAC test accounts from earlier manual testing
+    db.query(User).filter(User.email.like("rbaccheck%")).delete(synchronize_session=False)
+    db.commit()
+    print("[DEMO] student@demo.com / faculty@demo.com / admin@demo.com  (password: demo1234)")

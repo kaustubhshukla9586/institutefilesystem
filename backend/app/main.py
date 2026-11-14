@@ -1,16 +1,17 @@
 import os
 from contextlib import asynccontextmanager
+
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), ".env"))
 
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI  # noqa: E402
+from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 
-from .database import engine, SessionLocal
-from .models import Base
-from .auth import seed_demo_users
-from .routers import auth_router, chat_router, admin_router
+from .auth import seed_demo_users  # noqa: E402  (refuses to import without JWT_SECRET outside dev)
+from .database import SessionLocal, engine  # noqa: E402
+from .models import Base  # noqa: E402
+from .routers import admin_router, auth_router, chat_router  # noqa: E402
 
 Base.metadata.create_all(bind=engine)
 
@@ -25,17 +26,12 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="University Privacy-Aware RAG", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Privacy-Aware RAG (Thornwick University)", version="2.0.0", lifespan=lifespan)
 
-ALLOWED_ORIGINS = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Only the frontend origin(s) may call the API from a browser.
+ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_credentials=False,
+                   allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
 
 app.include_router(auth_router.router)
 app.include_router(chat_router.router)

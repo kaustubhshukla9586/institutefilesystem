@@ -62,6 +62,7 @@ def main():
     check("S-4", "where=" in src and viol == 0, f"where-clause in retrieval={('where=' in src)} over-level chunks={viol}")
 
     client = TestClient(app)
+    client.__enter__()  # run lifespan (seeds demo users)
     from app import auth
     em = f"speccheck-{uuid.uuid4().hex[:6]}@thornwick.example"
     r = client.post("/auth/signup", json={"email": em, "password": "Passw0rd!x", "role": "admin"})
@@ -76,14 +77,16 @@ def main():
 
     st = {"Authorization": f"Bearer {login('student@demo.com')}"}
     ad = {"Authorization": f"Bearer {login('admin@demo.com')}"}
-    qpath = "/query" if any(getattr(rt, "path", "") == "/query" for rt in app.routes) else "/chat/query"
-    alog = "/audit-log" if any(getattr(rt, "path", "") == "/audit-log" for rt in app.routes) else "/admin/audit-log"
+    qpath = "/query"
+    alog = "/audit-log"
     restricted_q = "What disciplinary action was taken in the confidential misconduct cases?"
     resp = client.post(qpath, json={"question": restricted_q}, headers=st)
     body = resp.json()
     student_audit = client.get(alog, headers=st).status_code
     a = client.get(alog, headers=ad).json()
-    rows = a["items"] if isinstance(a, dict) else a
+    if isinstance(a, dict) and "items" not in a:
+        print("audit-log response:", a, "query response:", resp.status_code, body)
+    rows = a.get("items", []) if isinstance(a, dict) else a
     last = rows[0] if rows else {}
     has_fields = all(k in last for k in ("user_email", "user_role", "question", "timestamp")) and \
         ("sources" in last or "retrieved_doc_ids" in last)
