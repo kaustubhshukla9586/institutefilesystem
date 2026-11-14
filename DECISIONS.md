@@ -133,3 +133,13 @@ This file records design decisions and deviations from the original spec.
 - Landing clearance toggle shows the real model: access level decides which documents can be retrieved; personal data is redacted for every role (only the admin "original" view shows it, and that view is audited).
 - Session token is kept in localStorage (60-min JWT, bearer header). Accepted trade-off for a demo; an httpOnly cookie would resist XSS better.
 - Playwright suite (frontend/e2e/app.spec.js) both verifies the UI against the real backend and captures report screenshots. It makes ~5 Groq calls per run.
+
+## Audit V2 (2026-11-14)
+
+- **Phase 0 used the existing `backend/.venv`** instead of creating a new virtualenv (a full reinstall plus the spaCy `en_core_web_lg` download would take most of the time budget). The README steps were checked by reading them in order. Missing notes (model download, `playwright install`, lockout) were added.
+- **Over-redaction (F-11) is not fixed.** The honorific recognizer is case-insensitive because of Presidio's default regex flags, so it swallows 1–2 words after a name. It fails safe, and fixing it would change chunks, placeholder counts and the eval while `report/build.py` is unavailable. It is recorded as a known limitation.
+- **Account lockout stays** as designed (5 failures / 5 min, in memory). It is documented in the README and the demo checklist instead.
+- **Live queries retry a Groq 429 once** (`generate_answer` default `retries=1`); the eval keeps `retries=4` because it is a batch job.
+- **spec_check S-1 and the eval leak scan count seed chunks only** (`UPL-` ids excluded), so a demo upload no longer changes the report's measured numbers.
+- **Test accounts created by pytest are not deleted** because they have audit rows.
+- **Uploads created by the audit and e2e runs were removed** from SQLite and Chroma (they were the auditor's own test data). Their `upload` audit rows were kept.

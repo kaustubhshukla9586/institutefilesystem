@@ -1,0 +1,39 @@
+    if asyncio.iscoroutinefunction(f):
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+12 passed, 4 warnings in 23.20s
+=== SPEC
+S-1: PASS - docs=65 {'public': 20, 'faculty': 25, 'admin': 20} chunks=337 chunking=500/50
+S-2: PASS - entities=['EMAIL_ADDRESS', 'LOCATION', 'PERSON', 'PHONE_NUMBER', 'STUDENT_ID'] roll_numbers_in_chunks=0 date_kept=True location_redacted=True
+S-3: PASS - map={'student': ['public'], 'faculty': ['public', 'faculty'], 'admin': ['public', 'faculty', 'admin']}
+S-4: PASS - where-clause in retrieval=True over-level chunks=0
+S-5: PASS - signup role=admin -> status 201 role=student; 3-char password -> 422
+S-6: PASS - query logged=True fields=True student GET audit -> 403
+S-7: PASS - refused=True sources=0 over-level=0 answer="I can't find anything you're cleared to see about that. If you think you need ac"
+S-8: PASS - placeholder counts={'PERSON': 406, 'LOCATION': 39, 'PHONE_NUMBER': 147, 'EMAIL_ADDRESS': 156, 'STUDENT_ID': 181} eval protocol present(20, 7/7/6)=True
+| ID | Status | Detail |
+|---|---|---|
+| S-1 | PASS | docs=65 {'public': 20, 'faculty': 25, 'admin': 20} chunks=337 chunking=500/50 |
+| S-2 | PASS | entities=['EMAIL_ADDRESS', 'LOCATION', 'PERSON', 'PHONE_NUMBER', 'STUDENT_ID'] roll_numbers_in_chunks=0 date_kept=True location_redacted=True |
+| S-3 | PASS | map={'student': ['public'], 'faculty': ['public', 'faculty'], 'admin': ['public', 'faculty', 'admin']} |
+| S-4 | PASS | where-clause in retrieval=True over-level chunks=0 |
+| S-5 | PASS | signup role=admin -> status 201 role=student; 3-char password -> 422 |
+| S-6 | PASS | query logged=True fields=True student GET audit -> 403 |
+| S-7 | PASS | refused=True sources=0 over-level=0 answer="I can't find anything you're cleared to see about that. If you think you need ac" |
+| S-8 | PASS | placeholder counts={'PERSON': 406, 'LOCATION': 39, 'PHONE_NUMBER': 147, 'EMAIL_ADDRESS': 156, 'STUDENT_ID': 181} eval protocol present(20, 7/7/6)=True |
+=== EVAL
+
+| Q | Role | Expected | Why it failed |
+|---|---|---|---|
+| Q11 | faculty | ALLOW | refused |
+| Q11 | admin | ALLOW | refused |
+| Q18 | admin | ALLOW | refused |
+
+## (c) Retrieval recall
+
+| k | Recall@k (admin, 20 questions) |
+|---|---|
+| 1 | 0.95 |
+| 3 | 1.0 |
+| 5 | 1.0 |
+
