@@ -64,6 +64,11 @@ export async function api(path, { method = "GET", body, form } = {}) {
   if (!res.ok) {
     if (res.status === 401 && s) {
       clearSession();
+      try {
+        sessionStorage.setItem("tw_notice", "Your session has ended. Please sign in again.");
+      } catch {
+        /* ignore */
+      }
       window.dispatchEvent(new Event("tw-logout"));
     }
     throw new ApiError(res.status, detailText(data?.detail) || `Request failed (${res.status}).`);

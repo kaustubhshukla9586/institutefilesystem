@@ -40,7 +40,7 @@ const STEPS = [
   {
     n: "01",
     t: "Redact",
-    d: "Names, student IDs, emails, phone numbers and places are replaced before anything is stored or embedded. Dates stay, because questions need them.",
+    d: "Names, student IDs, emails, phone numbers and places are replaced before anything is indexed or sent to the AI model. Dates stay, because questions need them. The original is kept only for audited admin viewing.",
   },
   {
     n: "02",
@@ -89,7 +89,7 @@ export default function Landing() {
 
           <div className="self-center rounded-[2px] border border-line bg-ink-1 p-5">
             <p id="clr-label" className="text-xs text-dim">
-              Same question, different clearance
+              Same question, different clearance (illustration)
             </p>
             <div role="radiogroup" aria-labelledby="clr-label" className="mt-2 grid grid-cols-3 gap-1 rounded-[2px] bg-ink-0 p-1">
               {LEVELS.map((l) => (

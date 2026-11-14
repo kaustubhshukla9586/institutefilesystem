@@ -31,7 +31,18 @@ const router = createBrowserRouter([
       { path: "/upload", element: S(<Upload />), handle: { roles: ["faculty", "admin"] } },
     ],
   },
-  { path: "*", element: <Landing /> },
+  {
+    path: "*",
+    element: (
+      <main id="main" className="mx-auto max-w-md px-4 py-24 text-center">
+        <h1 className="font-display text-3xl font-bold">Page not found</h1>
+        <p className="mt-2 text-sm text-dim">There's nothing at this address.</p>
+        <a href="/" className="mt-6 inline-block text-amber underline">
+          Back to the home page
+        </a>
+      </main>
+    ),
+  },
 ]);
 
 createRoot(document.getElementById("root")).render(

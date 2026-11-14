@@ -33,7 +33,7 @@ export default function Documents() {
       <div className="mt-4">
         <ErrorNote>{err}</ErrorNote>
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[320px_1fr]">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[320px_1fr]">
         <Card className="p-3">
           <label htmlFor="doc-filter" className="sr-only">
             Filter documents

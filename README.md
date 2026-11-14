@@ -1,9 +1,10 @@
 # Privacy-Aware RAG System for Sensitive Institutional Documents
 
 Project RK3P25KZB16. A question-answering assistant over the (fictional) documents of Thornwick University.
-Personal data is redacted before anything is stored, retrieval is filtered by the user's role inside the
-vector-database query, every answer is written by a Groq-hosted LLM from allowed documents only, and every
-query is audited. All documents and people are synthetic.
+Personal data is redacted before anything is indexed or sent to the LLM (the original text is kept in SQLite only
+for the admin's audited "original" view), retrieval is filtered by the user's role inside the vector-database query, every answer is written by a Groq-hosted LLM from allowed documents only, and every
+query is audited. This is a university prototype on synthetic data: redaction reduces the risk of exposing personal
+data, it does not guarantee it. All documents and people are synthetic.
 
 **Stack:** FastAPI · SQLite (SQLAlchemy) · ChromaDB · Presidio + spaCy · sentence-transformers (all-MiniLM-L6-v2) · Groq (`openai/gpt-oss-20b`) · JWT + bcrypt · React (Vite) + Tailwind.
 
@@ -37,6 +38,8 @@ cd backend
 python -m app.ingestion        # redact -> chunk 500/50 -> embed -> ChromaDB (65 docs, 337 chunks)
 ```
 
+The first run downloads the `all-MiniLM-L6-v2` embedding model (~90 MB), so it needs internet once.
+
 ## Run
 
 ```powershell
@@ -58,12 +61,14 @@ API docs: http://localhost:8000/docs
 
 Self sign-up always creates a **student** account (minimum password length 8).
 
+5 wrong passwords for one e-mail lock it for 5 minutes (in memory). Restarting the backend clears the lock.
+
 ## Tests and evaluation
 
 ```powershell
 cd backend
 python -m pytest -q tests          # 12 tests: access control, sign-up, 403s, features (no LLM calls)
-python -m scripts.spec_check       # report claims S-1..S-8, PASS/FAIL
+python -m scripts.spec_check       # report claims S-1..S-8, PASS/FAIL (makes 2 Groq calls; counts seed documents only)
 python -m eval.run_eval --calibrate   # distances only, no LLM
 python -m eval.run_eval            # leak scan + 60-case role matrix + recall@k
 ```
@@ -76,7 +81,8 @@ was shown), recall@1 **0.95**, recall@3 **1.0**, recall@5 **1.0**.
 Frontend e2e (needs the backend on :8000 and `npm run build && npx vite preview --port 5173`):
 
 ```powershell
-cd frontend; npx playwright test   # verifies roles, 403 page, axe, mobile; writes ../screenshots
+cd frontend; npx playwright install chromium   # once
+npx playwright test   # verifies roles, 403 page, axe, mobile; writes ../screenshots
 ```
 
 ## API
@@ -93,5 +99,7 @@ cd frontend; npx playwright test   # verifies roles, 403 page, axe, mobile; writ
 | POST | `/documents/upload` | faculty, admin | .txt/.md/.pdf with an access level up to your own |
 | GET | `/audit-log?role=&user=&q=&result=&event=&from=&to=&page=` | admin | filtered audit log |
 | GET | `/stats` | admin | admin dashboard counters |
+
+Audit: `AUDIT_V2.md` (scripts `backend/scripts/audit_probe.py`, `frontend/scripts/ui_audit.mjs`).
 
 See `DECISIONS.md` for design decisions and `docs/DEMO_SCRIPT.md` for a 5-minute demo.

@@ -16,7 +16,15 @@ export default function AuthPage({ mode }) {
   const loc = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [err, setErr] = useState("");
+  const [err, setErr] = useState(() => {
+    try {
+      const n = sessionStorage.getItem("tw_notice") || "";
+      sessionStorage.removeItem("tw_notice");
+      return n;
+    } catch {
+      return "";
+    }
+  });
   const [busy, setBusy] = useState(false);
 
   if (session) return <Navigate to={loc.state?.from || "/dashboard"} replace />;

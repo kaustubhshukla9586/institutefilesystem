@@ -52,7 +52,7 @@ function AdminDash() {
         <Stat label="Original-document views" value={data?.reveals_total} hint="all time, audited" />
         <Stat label="Users" value={data ? Object.values(data.users_per_role).reduce((a, b) => a + b, 0) : null} />
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_2fr]">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_2fr]">
         <Levels per={data?.documents_per_level} />
         <Card>
           <div className="flex items-center justify-between">
@@ -65,7 +65,7 @@ function AdminDash() {
             {(data?.latest_audit || []).map((r) => (
               <li key={r.id} className="flex flex-wrap items-baseline gap-x-3 gap-y-1 py-2 text-sm">
                 <ResultTag r={r.event === "query" ? r.result : r.event} />
-                <span className="min-w-0 flex-1 truncate text-text">
+                <span className="min-w-[8rem] flex-1 truncate text-text">
                   <RedactedText text={r.question} idPrefix={`la${r.id}`} />
                 </span>
                 <span className="text-xs text-dim">
@@ -91,7 +91,7 @@ function UserDash({ role }) {
         <Stat label="Your questions, all time" value={data?.queries_total} />
         <Stat label="Refused" value={data?.refusals_total} hint="nothing within your clearance" />
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_2fr]">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-[1fr_2fr]">
         <Levels per={data?.documents_per_level} />
         <Card>
           <h2 className="text-sm font-semibold">Your recent questions</h2>
@@ -109,7 +109,7 @@ function UserDash({ role }) {
       </div>
       {role === "faculty" && (
         <Card className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <p className="text-sm text-text">Add a document for students or colleagues. It's redacted before it's stored.</p>
+          <p className="text-sm text-text">Add a document for students or colleagues. Personal details are redacted before it's indexed.</p>
           <Link to="/upload" className={buttonClass({ variant: "outline" })}>
             Upload a document
           </Link>
