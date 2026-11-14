@@ -65,13 +65,13 @@ def query(body: QueryRequest, db: Session = Depends(get_db), user: User = Depend
     if not q:
         raise HTTPException(status_code=400, detail="Question cannot be empty.")
     try:
-        out = answer_question(q, user.role)
+        out = answer_question(q, user.role, generate=generate_answer)
         result = "refused" if out["refused"] else "answered"
     except Exception as e:  # LLM outage / quota: log it, tell the user plainly
         db.add(AuditLog(user_id=user.id, user_role=user.role, event="query", question=q,
                         retrieved_doc_ids="[]", answer=f"error: {type(e).__name__}", result="error"))
         db.commit()
-        raise HTTPException(status_code=503, detail="The answer service is busy right now. Please try again in a minute.")
+        raise HTTPException(status_code=503, detail="The answer service is unavailable right now. Please try again in a minute.")
     db.add(AuditLog(user_id=user.id, user_role=user.role, event="query", question=q,
                     retrieved_doc_ids=json.dumps([s["doc_id"] for s in out["sources"]]),
                     answer=out["answer"], result=result))

@@ -45,8 +45,9 @@ def _clean(text: str) -> str:
     return text.strip()
 
 
-def generate_answer(question: str, chunks: list[dict], retries: int = 4) -> str:
-    """Returns the cleaned answer, or NO_ANSWER when the model finds nothing relevant."""
+def generate_answer(question: str, chunks: list[dict], retries: int = 1) -> str:
+    """Returns the cleaned answer, or NO_ANSWER when the model finds nothing relevant.
+    Live queries retry a Groq 429 once (5 s) so users aren't left waiting; the eval passes retries=4."""
     client = get_groq_client()
     delay = 5.0
     for attempt in range(retries + 1):

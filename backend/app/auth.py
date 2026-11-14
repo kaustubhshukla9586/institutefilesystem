@@ -27,6 +27,10 @@ MIN_PASSWORD_LENGTH = 8
 ROLE_LEVEL = {"student": 0, "faculty": 1, "admin": 2}
 ACCESS_LEVELS = ["public", "faculty", "admin"]  # index == clearance
 
+import logging  # noqa: E402
+
+# passlib probes bcrypt.__about__ (gone in bcrypt 4) and logs a harmless traceback on every start
+logging.getLogger("passlib").setLevel(logging.ERROR)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 bearer_scheme = HTTPBearer(auto_error=False)
 

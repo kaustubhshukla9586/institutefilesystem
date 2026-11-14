@@ -61,7 +61,9 @@ def raw_person_names(docs) -> set[str]:
 
 def leak_scan():
     docs = json.load(open(RAW_DOCS_PATH, encoding="utf-8"))
-    chunks = get_chroma_collection().get(include=["documents"])["documents"]
+    got = get_chroma_collection().get(include=["documents"])
+    # seed corpus only: documents uploaded later (UPL-...) are not part of the measured set
+    chunks = [d for i, d in zip(got["ids"], got["documents"]) if not i.startswith("UPL-")]
     joined = "\n".join(chunks)
     names = raw_person_names(docs)
     name_hits = {n: joined.count(n) for n in names if re.search(r"(?<!\w)" + re.escape(n) + r"(?!\w)", joined)}
@@ -98,7 +100,7 @@ def cached_generate(question, chunks):
     wait = MIN_INTERVAL_S - (time.monotonic() - _last_call[0])
     if wait > 0:
         time.sleep(wait)
-    ans = generation.generate_answer(question, chunks)  # retries 429 with exponential backoff
+    ans = generation.generate_answer(question, chunks, retries=4)  # retries 429 with exponential backoff
     _last_call[0] = time.monotonic()
     stats["llm_calls"] += 1
     _cache[key] = ans

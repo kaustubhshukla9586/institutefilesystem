@@ -26,7 +26,9 @@ def check(cid, ok, detail):
 def all_chunks():
     col = ingestion.get_chroma_collection()
     got = col.get(include=["documents", "metadatas"])
-    return got["documents"], got["metadatas"]
+    # seed corpus only: uploads (UPL-...) are added at run time and are not part of the report's numbers
+    keep = [k for k, i in enumerate(got["ids"]) if not i.startswith("UPL-")]
+    return [got["documents"][k] for k in keep], [got["metadatas"][k] for k in keep]
 
 
 def main():

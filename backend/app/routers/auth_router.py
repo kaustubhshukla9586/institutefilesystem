@@ -8,6 +8,7 @@ from ..database import get_db
 from ..models import User
 
 router = APIRouter(tags=["auth"])
+DUMMY_HASH = hash_password("timing-equaliser-not-a-real-password")
 
 
 class SignupRequest(BaseModel):
@@ -45,7 +46,8 @@ def signup(body: SignupRequest, db: Session = Depends(get_db)):
 def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     check_rate_limit(request, body.email)
     user = db.query(User).filter(User.email == body.email.lower()).first()
-    if not user or not verify_password(body.password, user.hashed_password):
+    # unknown e-mails still pay for one bcrypt check, so timing doesn't reveal who is registered
+    if not verify_password(body.password, user.hashed_password if user else DUMMY_HASH) or not user:
         record_failure(request, body.email)
         raise HTTPException(status_code=401, detail="Wrong email or password.")
     clear_failures(request, body.email)
