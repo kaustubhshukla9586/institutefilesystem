@@ -109,3 +109,8 @@ This file records design decisions and deviations from the original spec.
 **Decision**: Using `llama-3.1-8b-instant` as specified.
 
 **Why**: Available on Groq's free tier, fast inference, sufficient quality for a RAG demo. No deviation needed.
+
+## Build-to-report decisions (2026-11-14)
+- `v1-fallback` exists only as a tag; branch `submission` created from it.
+- `report_build/` (build.py, ref.docx, arch.png) is not anywhere under the user profile. Stage 1 uses the S-1..S-8 claims in the brief as the spec; report edits (Stage 7.1-7.6) are blocked until the sources are added to `report/`.
+- Existing `backend/.env` uses `JWT_SECRET`; the backend reads `JWT_SECRET` (falling back to `SECRET_KEY`).
