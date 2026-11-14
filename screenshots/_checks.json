@@ -1,0 +1,16 @@
+{
+  "consoleErrors": [
+    "http://localhost:5173/login: Failed to load resource: the server responded with a status of 401 (Unauthorized)"
+  ],
+  "axeSerious": {
+    "landing": [],
+    "login": [],
+    "signup": [],
+    "chat": [],
+    "student-dashboard": [],
+    "admin-dashboard": [],
+    "audit": [],
+    "documents": [],
+    "upload": []
+  }
+}
