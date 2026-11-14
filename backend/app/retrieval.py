@@ -11,7 +11,7 @@ ROLE_ACCESS_MAP = {r: allowed_levels(r) for r in ("student", "faculty", "admin")
 
 # Cosine distance above which a chunk is treated as "not about this question".
 # Calibrated on the Stage 5 evaluation questions; see DECISIONS.md.
-RELEVANCE_THRESHOLD = float(os.getenv("RELEVANCE_THRESHOLD", "0.6"))
+RELEVANCE_THRESHOLD = float(os.getenv("RELEVANCE_THRESHOLD", "0.50"))
 
 
 def where_for_role(role: str) -> dict:

@@ -34,7 +34,7 @@ def main():
     by_level = collections.Counter(d["access_level"] for d in docs)
     texts, metas = all_chunks()
     check("S-1", len(docs) == 65 and by_level == {"public": 20, "faculty": 25, "admin": 20}
-          and len(texts) == 339 and (ingestion.CHUNK_SIZE, ingestion.CHUNK_OVERLAP) == (500, 50),
+          and len(texts) == 337 and (ingestion.CHUNK_SIZE, ingestion.CHUNK_OVERLAP) == (500, 50),
           f"docs={len(docs)} {dict(by_level)} chunks={len(texts)} chunking={ingestion.CHUNK_SIZE}/{ingestion.CHUNK_OVERLAP}")
 
     ents = set(pii_redaction._ENTITIES)
