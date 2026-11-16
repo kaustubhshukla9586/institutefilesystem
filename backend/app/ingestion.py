@@ -15,6 +15,8 @@ from .pii_redaction import redact_with_counts
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW_DOCS_PATH = os.path.join(BASE_DIR, "app", "seed_data", "raw_docs", "documents.json")
+# Second, larger synthetic set (same schema), ingested after the original 65 documents.
+EXTRA_DOCS_PATH = os.path.join(BASE_DIR, "app", "seed_data", "raw_docs", "documents_extra.json")
 CHROMA_DIR = os.path.join(BASE_DIR, "chroma_db")
 COLLECTION_NAME = "university_docs"
 
@@ -74,6 +76,14 @@ def ingest_document(db, doc_id: str, title: str, access_level: str, category: st
     return {"doc_id": doc_id, "chunks": len(chunks), "entities": dict(counts), "redacted": redacted}
 
 
+def load_raw_documents() -> list[dict]:
+    """Original seed documents plus the optional extra file."""
+    docs = json.load(open(RAW_DOCS_PATH, encoding="utf-8"))
+    if os.path.exists(EXTRA_DOCS_PATH):
+        docs += json.load(open(EXTRA_DOCS_PATH, encoding="utf-8"))
+    return docs
+
+
 def ingest(reset: bool = True):
     from .database import SessionLocal, engine
     from .models import Base, Document
@@ -81,7 +91,7 @@ def ingest(reset: bool = True):
     if not os.path.exists(RAW_DOCS_PATH):
         print(f"[ERROR] documents.json not found at {RAW_DOCS_PATH}")
         sys.exit(1)
-    documents = json.load(open(RAW_DOCS_PATH, encoding="utf-8"))
+    documents = load_raw_documents()
     Base.metadata.create_all(bind=engine)
     collection = get_chroma_collection(reset=reset)
     db = SessionLocal()
