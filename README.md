@@ -55,7 +55,3 @@ python -m ml.train_access_classifier     # compares 6 models -> ml/models/, ../r
 ```
 
 The data is synthetic, so scores on unseen topic families are much lower than with normal cross-validation. See `report/ML_REPORT_UPDATES.md`.
-
-## Notes
-
-Built with AI coding assistance.
