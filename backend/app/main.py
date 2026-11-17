@@ -29,9 +29,12 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Privacy-Aware RAG (Thornwick University)", version="2.0.0", lifespan=lifespan)
 
 # Only the frontend origin(s) may call the API from a browser.
-ALLOWED_ORIGINS = [o.strip() for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if o.strip()]
+# Comma-separated; spaces and trailing slashes are stripped, empty entries and "*" are ignored.
+ALLOWED_ORIGINS = [o.strip().rstrip("/") for o in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")]
+ALLOWED_ORIGINS = [o for o in ALLOWED_ORIGINS if o and o != "*"] or ["http://localhost:5173"]
 app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS, allow_credentials=False,
-                   allow_methods=["GET", "POST"], allow_headers=["Authorization", "Content-Type"])
+                   allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+                   allow_headers=["Authorization", "Content-Type"], max_age=600)
 
 app.include_router(auth_router.router)
 app.include_router(chat_router.router)
