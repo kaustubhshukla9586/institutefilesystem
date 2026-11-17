@@ -1,0 +1,1216 @@
+{
+  "version": "access-clf-1.0",
+  "date": "2026-11-17",
+  "seed": 42,
+  "n_documents": 165,
+  "class_counts": {
+    "faculty": 60,
+    "admin": 55,
+    "public": 50
+  },
+  "n_topic_groups": 12,
+  "classes": [
+    "public",
+    "faculty",
+    "admin"
+  ],
+  "features": {
+    "tfidf": "word 1-2 grams, sublinear_tf, min_df=2, max_df=0.9, lowercase, English stop words + spurious-term list",
+    "spurious_stop_terms": [
+      "actions",
+      "chair",
+      "circulated",
+      "contact",
+      "copies",
+      "copy",
+      "email_address",
+      "example",
+      "follow",
+      "https",
+      "issued",
+      "liaison",
+      "location",
+      "mail",
+      "notice",
+      "office",
+      "person",
+      "phone",
+      "phone_number",
+      "prepared",
+      "recorded",
+      "representative",
+      "roll",
+      "student_id",
+      "thornwick",
+      "tracked",
+      "university",
+      "www"
+    ],
+    "excluded_inputs": [
+      "doc_id prefix",
+      "access level field",
+      "title"
+    ]
+  },
+  "protocol": {
+    "A": "RepeatedStratifiedKFold(5 splits x 3 repeats), tuning nested inside each fold",
+    "B": "GroupKFold(6) by topic_group (12 KMeans topic families), tuning nested",
+    "C": "stratified 80/20 split made once; tuned on the 80% only; evaluated once",
+    "D": "chosen pipeline with shuffled labels, stratified 5-fold x 3",
+    "E": "severe = predicted lower than true level; over-restrictive = predicted higher",
+    "inner_tuning": "GridSearchCV, StratifiedKFold(3), scoring macro-F1"
+  },
+  "library_versions": {
+    "python": "3.14.5",
+    "scikit-learn": "1.9.0",
+    "numpy": "2.4.6",
+    "pandas": "3.1.1",
+    "joblib": "1.6.0"
+  },
+  "models": {
+    "Majority baseline": {
+      "grid": {},
+      "A_stratified_cv": {
+        "accuracy_mean": 0.3636,
+        "accuracy_std": 0.0,
+        "macro_f1_mean": 0.1778,
+        "macro_f1_std": 0.0,
+        "severe_error_rate_mean": 0.3333,
+        "over_restrictive_rate_mean": 0.303,
+        "pooled_accuracy": 0.3636,
+        "pooled_macro_f1": 0.1778,
+        "pooled_severe_error_rate": 0.3333,
+        "pooled_over_restrictive_rate": 0.303,
+        "fold_accuracy": [
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636,
+          0.3636
+        ],
+        "fold_macro_f1": [
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778,
+          0.1778
+        ],
+        "fold_best_params": []
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.0598,
+        "accuracy_std": 0.0704,
+        "macro_f1_mean": 0.0351,
+        "macro_f1_std": 0.0379,
+        "severe_error_rate_mean": 0.3817,
+        "over_restrictive_rate_mean": 0.5586,
+        "pooled_accuracy": 0.0606,
+        "pooled_macro_f1": 0.0592,
+        "pooled_severe_error_rate": 0.3818,
+        "pooled_over_restrictive_rate": 0.5576,
+        "fold_accuracy": [
+          0.2143,
+          0.0345,
+          0.0,
+          0.0357,
+          0.037,
+          0.037
+        ],
+        "fold_macro_f1": [
+          0.1176,
+          0.0222,
+          0.0,
+          0.023,
+          0.0238,
+          0.0238
+        ],
+        "fold_best_params": []
+      },
+      "cv_seconds": 0.8,
+      "C_held_out": {
+        "accuracy": 0.3636,
+        "macro_f1": 0.1778,
+        "severe_error_rate": 0.3333
+      }
+    },
+    "Keyword rule": {
+      "grid": {},
+      "A_stratified_cv": {
+        "accuracy_mean": 0.6788,
+        "accuracy_std": 0.0583,
+        "macro_f1_mean": 0.6691,
+        "macro_f1_std": 0.0596,
+        "severe_error_rate_mean": 0.1152,
+        "over_restrictive_rate_mean": 0.2061,
+        "pooled_accuracy": 0.6788,
+        "pooled_macro_f1": 0.6706,
+        "pooled_severe_error_rate": 0.1152,
+        "pooled_over_restrictive_rate": 0.2061,
+        "fold_accuracy": [
+          0.6364,
+          0.7576,
+          0.7879,
+          0.5758,
+          0.6364,
+          0.6364,
+          0.697,
+          0.7576,
+          0.6061,
+          0.697,
+          0.6364,
+          0.6667,
+          0.7273,
+          0.6667,
+          0.697
+        ],
+        "fold_macro_f1": [
+          0.6243,
+          0.7423,
+          0.7813,
+          0.5593,
+          0.6371,
+          0.6289,
+          0.6861,
+          0.7531,
+          0.5855,
+          0.6905,
+          0.6318,
+          0.6574,
+          0.7138,
+          0.6621,
+          0.6837
+        ],
+        "fold_best_params": []
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.6803,
+        "accuracy_std": 0.134,
+        "macro_f1_mean": 0.437,
+        "macro_f1_std": 0.1141,
+        "severe_error_rate_mean": 0.1168,
+        "over_restrictive_rate_mean": 0.203,
+        "pooled_accuracy": 0.6788,
+        "pooled_macro_f1": 0.6706,
+        "pooled_severe_error_rate": 0.1152,
+        "pooled_over_restrictive_rate": 0.2061,
+        "fold_accuracy": [
+          0.6071,
+          0.6552,
+          0.6538,
+          0.5357,
+          0.963,
+          0.6667
+        ],
+        "fold_macro_f1": [
+          0.5222,
+          0.4984,
+          0.2636,
+          0.4078,
+          0.3333,
+          0.5966
+        ],
+        "fold_best_params": []
+      },
+      "cv_seconds": 0.1,
+      "C_held_out": {
+        "accuracy": 0.7273,
+        "macro_f1": 0.7196,
+        "severe_error_rate": 0.0909
+      }
+    },
+    "Naive Bayes": {
+      "grid": {
+        "tfidf__max_features": [
+          "1000",
+          "3000",
+          "None"
+        ],
+        "clf__alpha": [
+          "0.01",
+          "0.1",
+          "0.5",
+          "1.0"
+        ]
+      },
+      "A_stratified_cv": {
+        "accuracy_mean": 0.8848,
+        "accuracy_std": 0.0317,
+        "macro_f1_mean": 0.8849,
+        "macro_f1_std": 0.0331,
+        "severe_error_rate_mean": 0.0545,
+        "over_restrictive_rate_mean": 0.0606,
+        "pooled_accuracy": 0.8909,
+        "pooled_macro_f1": 0.8931,
+        "pooled_severe_error_rate": 0.0545,
+        "pooled_over_restrictive_rate": 0.0545,
+        "fold_accuracy": [
+          0.8485,
+          0.9091,
+          0.8788,
+          0.9394,
+          0.8485,
+          0.8788,
+          0.8485,
+          0.8485,
+          0.8788,
+          0.9394,
+          0.8485,
+          0.8788,
+          0.9091,
+          0.9091,
+          0.9091
+        ],
+        "fold_macro_f1": [
+          0.8433,
+          0.9059,
+          0.8775,
+          0.9409,
+          0.8437,
+          0.8834,
+          0.8457,
+          0.8509,
+          0.882,
+          0.9419,
+          0.845,
+          0.8836,
+          0.9108,
+          0.9101,
+          0.9085
+        ],
+        "fold_best_params": [
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 3000
+          }
+        ]
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.5716,
+        "accuracy_std": 0.1653,
+        "macro_f1_mean": 0.4316,
+        "macro_f1_std": 0.1892,
+        "severe_error_rate_mean": 0.254,
+        "over_restrictive_rate_mean": 0.1744,
+        "pooled_accuracy": 0.5758,
+        "pooled_macro_f1": 0.5772,
+        "pooled_severe_error_rate": 0.2485,
+        "pooled_over_restrictive_rate": 0.1758,
+        "fold_accuracy": [
+          0.75,
+          0.5862,
+          0.3077,
+          0.7857,
+          0.4444,
+          0.5556
+        ],
+        "fold_macro_f1": [
+          0.7453,
+          0.4853,
+          0.1569,
+          0.5368,
+          0.2723,
+          0.3931
+        ],
+        "fold_best_params": [
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.5,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.5,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__alpha": 0.01,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__alpha": 0.1,
+            "tfidf__max_features": 1000
+          }
+        ]
+      },
+      "cv_seconds": 6.9,
+      "C_held_out": {
+        "accuracy": 0.9394,
+        "macro_f1": 0.9402,
+        "severe_error_rate": 0.0
+      }
+    },
+    "Logistic Regression": {
+      "grid": {
+        "tfidf__max_features": [
+          "1000",
+          "3000",
+          "None"
+        ],
+        "clf__C": [
+          "0.1",
+          "1",
+          "10",
+          "100"
+        ]
+      },
+      "A_stratified_cv": {
+        "accuracy_mean": 0.9212,
+        "accuracy_std": 0.0426,
+        "macro_f1_mean": 0.9221,
+        "macro_f1_std": 0.0418,
+        "severe_error_rate_mean": 0.0303,
+        "over_restrictive_rate_mean": 0.0485,
+        "pooled_accuracy": 0.9152,
+        "pooled_macro_f1": 0.9166,
+        "pooled_severe_error_rate": 0.0242,
+        "pooled_over_restrictive_rate": 0.0606,
+        "fold_accuracy": [
+          0.8788,
+          0.9697,
+          0.9091,
+          0.9394,
+          0.9091,
+          0.8788,
+          0.9091,
+          0.8788,
+          0.9697,
+          1.0,
+          0.9394,
+          0.8485,
+          0.9697,
+          0.8788,
+          0.9394
+        ],
+        "fold_macro_f1": [
+          0.8777,
+          0.971,
+          0.9076,
+          0.9409,
+          0.9121,
+          0.8834,
+          0.9077,
+          0.882,
+          0.9691,
+          1.0,
+          0.9409,
+          0.8536,
+          0.971,
+          0.8777,
+          0.9373
+        ],
+        "fold_best_params": [
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          }
+        ]
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.6006,
+        "accuracy_std": 0.2195,
+        "macro_f1_mean": 0.5115,
+        "macro_f1_std": 0.2516,
+        "severe_error_rate_mean": 0.2727,
+        "over_restrictive_rate_mean": 0.1267,
+        "pooled_accuracy": 0.6061,
+        "pooled_macro_f1": 0.6055,
+        "pooled_severe_error_rate": 0.2667,
+        "pooled_over_restrictive_rate": 0.1273,
+        "fold_accuracy": [
+          0.75,
+          0.7241,
+          0.3462,
+          0.8571,
+          0.2593,
+          0.6667
+        ],
+        "fold_macro_f1": [
+          0.7529,
+          0.6124,
+          0.1714,
+          0.796,
+          0.1763,
+          0.5597
+        ],
+        "fold_best_params": [
+          {
+            "clf__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__C": 100,
+            "tfidf__max_features": 3000
+          }
+        ]
+      },
+      "cv_seconds": 5.1,
+      "C_held_out": {
+        "accuracy": 0.9091,
+        "macro_f1": 0.9085,
+        "severe_error_rate": 0.0
+      }
+    },
+    "Linear SVM": {
+      "grid": {
+        "tfidf__max_features": [
+          "1000",
+          "3000",
+          "None"
+        ],
+        "clf__estimator__C": [
+          "0.01",
+          "0.1",
+          "1",
+          "10"
+        ]
+      },
+      "A_stratified_cv": {
+        "accuracy_mean": 0.9273,
+        "accuracy_std": 0.0346,
+        "macro_f1_mean": 0.9278,
+        "macro_f1_std": 0.0344,
+        "severe_error_rate_mean": 0.0323,
+        "over_restrictive_rate_mean": 0.0404,
+        "pooled_accuracy": 0.9333,
+        "pooled_macro_f1": 0.935,
+        "pooled_severe_error_rate": 0.0303,
+        "pooled_over_restrictive_rate": 0.0364,
+        "fold_accuracy": [
+          0.9091,
+          0.9091,
+          0.8788,
+          0.9394,
+          0.9091,
+          0.9394,
+          0.9091,
+          0.8788,
+          1.0,
+          0.9697,
+          0.9394,
+          0.8788,
+          0.9394,
+          0.9697,
+          0.9394
+        ],
+        "fold_macro_f1": [
+          0.9101,
+          0.9086,
+          0.8775,
+          0.9419,
+          0.9077,
+          0.9393,
+          0.9077,
+          0.882,
+          1.0,
+          0.971,
+          0.9409,
+          0.8836,
+          0.9393,
+          0.9708,
+          0.9373
+        ],
+        "fold_best_params": [
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 1,
+            "tfidf__max_features": 1000
+          }
+        ]
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.6487,
+        "accuracy_std": 0.1972,
+        "macro_f1_mean": 0.5049,
+        "macro_f1_std": 0.2171,
+        "severe_error_rate_mean": 0.2602,
+        "over_restrictive_rate_mean": 0.0911,
+        "pooled_accuracy": 0.6545,
+        "pooled_macro_f1": 0.652,
+        "pooled_severe_error_rate": 0.2545,
+        "pooled_over_restrictive_rate": 0.0909,
+        "fold_accuracy": [
+          0.7857,
+          0.8621,
+          0.3846,
+          0.7857,
+          0.3704,
+          0.7037
+        ],
+        "fold_macro_f1": [
+          0.7825,
+          0.6898,
+          0.1852,
+          0.5368,
+          0.2548,
+          0.5801
+        ],
+        "fold_best_params": [
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 0.1,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__estimator__C": 10,
+            "tfidf__max_features": 3000
+          }
+        ]
+      },
+      "cv_seconds": 6.9,
+      "C_held_out": {
+        "accuracy": 0.9394,
+        "macro_f1": 0.9402,
+        "severe_error_rate": 0.0
+      }
+    },
+    "Random Forest": {
+      "grid": {
+        "tfidf__max_features": [
+          "1000",
+          "3000",
+          "None"
+        ],
+        "clf__n_estimators": [
+          "200",
+          "500"
+        ],
+        "clf__max_depth": [
+          "None",
+          "20"
+        ]
+      },
+      "A_stratified_cv": {
+        "accuracy_mean": 0.8747,
+        "accuracy_std": 0.0505,
+        "macro_f1_mean": 0.8759,
+        "macro_f1_std": 0.0503,
+        "severe_error_rate_mean": 0.0788,
+        "over_restrictive_rate_mean": 0.0465,
+        "pooled_accuracy": 0.8909,
+        "pooled_macro_f1": 0.8935,
+        "pooled_severe_error_rate": 0.0727,
+        "pooled_over_restrictive_rate": 0.0364,
+        "fold_accuracy": [
+          0.7879,
+          0.8485,
+          0.8182,
+          0.8485,
+          0.8182,
+          0.9091,
+          0.9091,
+          0.9091,
+          0.9091,
+          0.9091,
+          0.8182,
+          0.8485,
+          0.8788,
+          0.9394,
+          0.9697
+        ],
+        "fold_macro_f1": [
+          0.7882,
+          0.8473,
+          0.8258,
+          0.8523,
+          0.8158,
+          0.9108,
+          0.9077,
+          0.9103,
+          0.9059,
+          0.9121,
+          0.8222,
+          0.8459,
+          0.8821,
+          0.941,
+          0.9708
+        ],
+        "fold_best_params": [
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 3000
+          }
+        ]
+      },
+      "B_grouped_cv": {
+        "accuracy_mean": 0.4953,
+        "accuracy_std": 0.2617,
+        "macro_f1_mean": 0.3811,
+        "macro_f1_std": 0.226,
+        "severe_error_rate_mean": 0.2885,
+        "over_restrictive_rate_mean": 0.2162,
+        "pooled_accuracy": 0.503,
+        "pooled_macro_f1": 0.5016,
+        "pooled_severe_error_rate": 0.2848,
+        "pooled_over_restrictive_rate": 0.2121,
+        "fold_accuracy": [
+          0.6786,
+          0.7586,
+          0.1154,
+          0.6786,
+          0.1481,
+          0.5926
+        ],
+        "fold_macro_f1": [
+          0.6996,
+          0.537,
+          0.069,
+          0.4626,
+          0.106,
+          0.4125
+        ],
+        "fold_best_params": [
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": 20,
+            "clf__n_estimators": 500,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 3000
+          },
+          {
+            "clf__max_depth": null,
+            "clf__n_estimators": 200,
+            "tfidf__max_features": 1000
+          }
+        ]
+      },
+      "cv_seconds": 54.3,
+      "C_held_out": {
+        "accuracy": 0.9091,
+        "macro_f1": 0.9101,
+        "severe_error_rate": 0.0303
+      }
+    }
+  },
+  "choice": {
+    "best_by_grouped_f1": "Linear SVM",
+    "chosen": "Linear SVM",
+    "rule": "best grouped-CV macro-F1; a linear model within 1 point is preferred (explainable)"
+  },
+  "C_held_out": {
+    "model": "Linear SVM",
+    "n_train": 132,
+    "n_test": 33,
+    "best_params": {
+      "clf__estimator__C": "10",
+      "tfidf__max_features": "3000"
+    },
+    "accuracy": 0.9394,
+    "macro_f1": 0.9402,
+    "per_class": {
+      "public": {
+        "precision": 1.0,
+        "recall": 0.9,
+        "f1-score": 0.9474,
+        "support": 10.0
+      },
+      "faculty": {
+        "precision": 0.9167,
+        "recall": 0.9167,
+        "f1-score": 0.9167,
+        "support": 12.0
+      },
+      "admin": {
+        "precision": 0.9167,
+        "recall": 1.0,
+        "f1-score": 0.9565,
+        "support": 11.0
+      }
+    },
+    "confusion_matrix": {
+      "labels": [
+        "public",
+        "faculty",
+        "admin"
+      ],
+      "rows_true_cols_pred": [
+        [
+          9,
+          1,
+          0
+        ],
+        [
+          0,
+          11,
+          1
+        ],
+        [
+          0,
+          0,
+          11
+        ]
+      ]
+    },
+    "severe_error_rate": 0.0,
+    "over_restrictive_rate": 0.0606,
+    "train_seconds_incl_grid": 0.32,
+    "predict_ms_per_doc": 0.262
+  },
+  "final_params": {
+    "clf__estimator__C": "1",
+    "tfidf__max_features": "3000"
+  },
+  "D_shuffled_labels": {
+    "accuracy_mean": 0.3455,
+    "accuracy_std": 0.0573,
+    "majority_share": 0.3636
+  },
+  "spurious_check": {
+    "top20_without_extra_stop": {
+      "public": [
+        "thornwick",
+        "issued office",
+        "office registrar",
+        "registrar thornwick",
+        "office",
+        "thornwick university",
+        "notice issued",
+        "issued",
+        "notice",
+        "registrar",
+        "university",
+        "campus",
+        "available",
+        "later",
+        "location",
+        "faculty staff",
+        "calendar",
+        "services",
+        "registration",
+        "september"
+      ],
+      "faculty": [
+        "person",
+        "roll person",
+        "faculty",
+        "follow",
+        "grade",
+        "person follow",
+        "student members",
+        "person copy",
+        "copy person",
+        "circulated",
+        "minutes recorded",
+        "members",
+        "attendance",
+        "tracked person",
+        "follow actions",
+        "actions tracked",
+        "department office",
+        "members present",
+        "present person",
+        "recorded person"
+      ],
+      "admin": [
+        "mail phone",
+        "roll mail",
+        "mail",
+        "phone",
+        "help",
+        "person roll",
+        "phone person",
+        "confidential",
+        "person confidential",
+        "roll",
+        "hr",
+        "disciplinary",
+        "representative person",
+        "finance",
+        "copies",
+        "liaison person",
+        "liaison",
+        "audit",
+        "lakh",
+        "class representative"
+      ]
+    },
+    "B_pooled_macro_f1_without_extra_stop": 0.8648,
+    "B_pooled_accuracy_without_extra_stop": 0.8606,
+    "B_pooled_macro_f1_with_extra_stop": 0.6375,
+    "note": "fixed final params, grouped CV; compare with chosen model's B scores"
+  },
+  "top_terms": {
+    "public": [
+      "registrar",
+      "campus",
+      "register",
+      "available",
+      "free",
+      "open",
+      "card",
+      "pm",
+      "calendar",
+      "day",
+      "online",
+      "receives",
+      "id",
+      "faculty staff",
+      "later",
+      "service",
+      "days",
+      "volunteers",
+      "desk",
+      "applicants"
+    ],
+    "faculty": [
+      "student members",
+      "members present",
+      "faculty",
+      "present",
+      "members",
+      "representatives",
+      "student representatives",
+      "minutes",
+      "representatives informed",
+      "grade",
+      "engineering",
+      "coordinator",
+      "clarifications department",
+      "department",
+      "attendance",
+      "met",
+      "data",
+      "course",
+      "clarifications",
+      "conference"
+    ],
+    "admin": [
+      "confidential",
+      "student class",
+      "confidential student",
+      "persons named",
+      "confidential persons",
+      "persons",
+      "named",
+      "class",
+      "help",
+      "lakh",
+      "contract",
+      "officer",
+      "witness",
+      "related students",
+      "registrar related",
+      "confidential registrar",
+      "keeper",
+      "hr",
+      "related",
+      "audit"
+    ]
+  },
+  "model_file": {
+    "path": "backend/ml/models/access_classifier.joblib",
+    "bytes": 163309
+  }
+}

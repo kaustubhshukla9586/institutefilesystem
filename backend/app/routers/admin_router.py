@@ -5,7 +5,7 @@ import re
 import uuid
 from datetime import date, datetime, time, timedelta
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
@@ -145,10 +145,57 @@ def _extract(name: str, data: bytes) -> str:
         raise HTTPException(status_code=422, detail="The file is not valid UTF-8 text.")
 
 
+@router.post("/documents/suggest-level")
+async def suggest_level(request: Request, db: Session = Depends(get_db), user: User = Depends(require_staff)):
+    """Suggest an access level from the text with our trained classifier. Stores nothing, never calls
+    Chroma or the LLM, and does not affect access control (the upload cap below still applies).
+    Accepts multipart (`file`, or a `text` field) or JSON {"text": ...}."""
+    name = "pasted text"
+    ctype = request.headers.get("content-type", "")
+    if ctype.startswith("multipart/form-data"):
+        form = await request.form()
+        f = form.get("file")
+        if f is not None and hasattr(f, "read"):
+            data = await f.read()
+            if len(data) > MAX_UPLOAD_BYTES:
+                raise HTTPException(status_code=413, detail="File is larger than 2 MB.")
+            name = f.filename or "file"
+            text = _extract(name, data)
+        else:
+            text = str(form.get("text") or "")
+    else:
+        try:
+            body = await request.json()
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Send a file or JSON {\"text\": ...}.")
+        text = str(body.get("text") or "") if isinstance(body, dict) else ""
+    if len(text.encode("utf-8")) > MAX_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Text is larger than 2 MB.")
+    if not text.strip():
+        raise HTTPException(status_code=422, detail="There is no text to suggest a level for.")
+    from ml import predictor  # lazy: the app starts even if the ML files are missing
+    try:
+        out = predictor.predict(text)
+    except predictor.ModelUnavailable as e:
+        raise HTTPException(status_code=503, detail=f"Level suggestion is unavailable: {e} "
+                                                    "You can still choose the level yourself.")
+    own = ACCESS_LEVELS[ROLE_LEVEL[user.role]]
+    out["allowed"] = ACCESS_LEVELS.index(out["suggested_level"]) <= ROLE_LEVEL[user.role]
+    if not out["allowed"]:
+        out["capped_level"] = own
+    pct = round(out["probabilities"][out["suggested_level"]] * 100)
+    db.add(AuditLog(user_id=user.id, user_role=user.role, event="suggest",
+                    question=f"Model suggested {out['suggested_level']} ({pct}%"
+                             f"{', not sure' if not out['confident'] else ''}) for '{name[:120]}'",
+                    retrieved_doc_ids="[]", answer="", result="ok"))
+    db.commit()
+    return out
+
+
 @router.post("/documents/upload", status_code=201)
 async def upload(file: UploadFile = File(...), access_level: str = Form(...), title: str = Form(""),
-                 category: str = Form("uploaded"), db: Session = Depends(get_db),
-                 user: User = Depends(require_staff)):
+                 category: str = Form("uploaded"), suggested_level: str = Form(""),
+                 db: Session = Depends(get_db), user: User = Depends(require_staff)):
     if access_level not in ACCESS_LEVELS:
         raise HTTPException(status_code=400, detail="Access level must be public, faculty or admin.")
     if ACCESS_LEVELS.index(access_level) > ROLE_LEVEL[user.role]:
@@ -165,7 +212,8 @@ async def upload(file: UploadFile = File(...), access_level: str = Form(...), ti
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     db.add(AuditLog(user_id=user.id, user_role=user.role, event="upload",
-                    question=f"Uploaded {doc_id} '{title}' as {access_level}",
+                    question=f"Uploaded {doc_id} '{title}' as {access_level}"
+                             + (f" (model suggested {suggested_level})" if suggested_level in ACCESS_LEVELS else ""),
                     retrieved_doc_ids=json.dumps([doc_id]), answer="", result="ok"))
     db.commit()
     return {"doc_id": doc_id, "title": title, "access_level": access_level, "chunks": res["chunks"],

@@ -43,6 +43,19 @@ Open http://localhost:5173 (API docs at http://localhost:8000/docs).
 | Faculty | faculty@demo.com |
 | Admin | admin@demo.com |
 
+## Machine learning component
+
+We trained our own small classifier (TF-IDF and a calibrated linear SVM, scikit-learn) that reads an uploaded document's redacted text and **suggests** an access level (public, faculty or admin). The upload form pre-selects the suggestion, and the user can change it. When the model is unsure, it picks the more restrictive level. The model never enforces access: roles, the server-side level cap and the retrieval filter are unchanged. Endpoint: `POST /documents/suggest-level` (faculty and admin only).
+
+```powershell
+cd backend
+python -m ml.build_dataset               # redacted dataset -> ml/data/access_dataset.csv
+pip install -r requirements-ml.txt       # matplotlib, for the figures only
+python -m ml.train_access_classifier     # compares 6 models -> ml/models/, ../report/ml_results.json, ../report/figures/
+```
+
+The data is synthetic, so scores on unseen topic families are much lower than with normal cross-validation. See `report/ML_REPORT_UPDATES.md`.
+
 ## Notes
 
 Built with AI coding assistance.
